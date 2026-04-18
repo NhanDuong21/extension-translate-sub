@@ -3,6 +3,7 @@
  */
 
 const OFFSCREEN_DOCUMENT_PATH = 'offscreen/offscreen.html';
+let activeTabId = null; // Lưu trữ tab đang capture
 
 // Hàm đảm bảo chỉ có duy nhất một Offscreen Document
 async function ensureOffscreenDocument() {
@@ -30,11 +31,12 @@ async function ensureOffscreenDocument() {
 // Lắng nghe khi người dùng click vào icon extension
 chrome.action.onClicked.addListener(async (tab) => {
   try {
+    activeTabId = tab.id; // Cập nhật tab đang hoạt động
+    
     // 1. Đảm bảo offscreen document đã sẵn sàng
     await ensureOffscreenDocument();
 
     // 2. Lấy streamId từ tab hiện tại
-    // Chú ý: Cần User Gesture để gọi tabCapture
     const streamId = await chrome.tabCapture.getMediaStreamId({
       targetTabId: tab.id
     });
@@ -46,8 +48,21 @@ chrome.action.onClicked.addListener(async (tab) => {
       tabTitle: tab.title
     });
 
-    console.log(`Sent streamId to offscreen for tab: ${tab.title}`);
+    console.log(`Sent streamId to offscreen for tab: ${tab.title} (ID: ${tab.id})`);
   } catch (error) {
     console.error('Failed to start capture:', error);
+  }
+});
+
+// Relay message từ Offscreen sang Content Script
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (message.type === 'TRANSCRIPT' && activeTabId !== null) {
+    chrome.tabs.sendMessage(activeTabId, {
+      type: 'TRANSCRIPT',
+      payload: message.payload
+    }).catch(() => {
+      // Content script chưa được inject hoặc tab đã đóng - bỏ qua
+      console.log('Target tab not ready for transcription relay.');
+    });
   }
 });

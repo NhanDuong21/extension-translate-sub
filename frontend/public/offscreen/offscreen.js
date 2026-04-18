@@ -18,6 +18,14 @@ function setupSocket() {
     console.log('Connected to backend via Socket.io');
   });
 
+  socket.on('transcription', (data) => {
+    // Relay dữ liệu từ socket sang Service Worker
+    chrome.runtime.sendMessage({
+      type: 'TRANSCRIPT',
+      payload: data // { original_text, translated_text, language }
+    });
+  });
+
   socket.on('disconnect', () => {
     console.log('Disconnected from backend');
   });
