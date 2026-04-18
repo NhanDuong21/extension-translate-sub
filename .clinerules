@@ -1,0 +1,8 @@
+# Project Rules: extension-translate-sub
+
+- **Language**: Sử dụng JavaScript (KHÔNG dùng TypeScript).
+- **Styling**: Sử dụng Tailwind CSS.
+- **UI Design**: Night Mode (chế độ tối) tối giản, hiện đại, premium.
+- **Logic**: Luôn giải thích logic ngắn gọn bằng tiếng Việt trước khi tạo file hoặc thực hiện thay đổi lớn.
+- **Frameworks**: React 19 (Frontend), FastAPI (Backend).
+- **Extension**: Manifest V3, tập trung vào `tabCapture` và `offscreen`.

@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Extension Translate Sub - Multi-language to Vietnamese",
+  "version": "1.0",
+  "description": "Dịch video đa ngôn ngữ sang Tiếng Việt bằng AI.",
+  "permissions": [
+    "tabCapture",
+    "offscreen",
+    "storage",
+    "scripting",
+    "tabs",
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"]
+    }
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}
