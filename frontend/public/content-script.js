@@ -16,7 +16,7 @@
     position: fixed;
     z-index: 2147483647;
     pointer-events: none;
-    bottom: 80px;
+    bottom: 120px;
     left: 50%;
     transform: translateX(-50%);
   `;

@@ -17,7 +17,7 @@ class TranslationEngine:
             api_key=Config.GEMINI_API_KEY,
             http_options={'api_version': 'v1'}
         )
-        self.model_id = 'gemini-2.0-flash'
+        self.model_id = 'gemini-1.5-flash'
         
         # System Prompt cho dịch thuật phụ đề
         self.system_prompt = (
@@ -49,12 +49,12 @@ class TranslationEngine:
         try:
             # Logic gọi SDK mới (luôn dùng bản stable)
             response = self.client.models.generate_content(
-                model='gemini-2.0-flash',
+                model='gemini-1.5-flash',
                 contents=f"{self.system_prompt}\n\nVăn bản: {text}"
             )
             return response.text.strip()
         except Exception as e:
-            logger.error(f"Gemini Translation Error: {e}")
+            logger.error(f"Gemini Translation Error (Quota or other): {e}")
             # Trả về text gốc nếu lỗi để không làm gián đoạn UI
             return text
 
