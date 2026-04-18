@@ -44,9 +44,9 @@ class TranslationEngine:
             return text
             
         try:
-            # Logic gọi SDK mới
+            # Logic gọi SDK mới (chuẩn v1 stable)
             response = self.client.models.generate_content(
-                model=self.model_id,
+                model='gemini-1.5-flash',
                 contents=f"{self.system_prompt}\n\nVăn bản: {text}"
             )
             return response.text.strip()
