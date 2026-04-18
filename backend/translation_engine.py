@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 from functools import lru_cache
 from config import Config
 import logging
@@ -12,9 +12,9 @@ class TranslationEngine:
         if TranslationEngine._instance is not None:
             raise Exception("This class is a singleton!")
         
-        # Cấu hình Gemini
-        genai.configure(api_key=Config.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        # Cấu hình Gemini SDK mới nhất (google-genai)
+        self.client = genai.Client(api_key=Config.GEMINI_API_KEY)
+        self.model_id = 'gemini-1.5-flash'
         
         # System Prompt cho dịch thuật phụ đề
         self.system_prompt = (
@@ -33,7 +33,7 @@ class TranslationEngine:
             TranslationEngine()
         return TranslationEngine._instance
 
-    @lru_cache(max_depth=500)
+    @lru_cache(maxsize=500)
     def _translate_with_cache(self, text: str) -> str:
         """Thực hiện dịch thuật với cache LRU để tối ưu hóa."""
         if not text or len(text.strip()) == 0:
@@ -44,8 +44,10 @@ class TranslationEngine:
             return text
             
         try:
-            response = self.model.generate_content(
-                f"{self.system_prompt}\n\nVăn bản: {text}"
+            # Logic gọi SDK mới
+            response = self.client.models.generate_content(
+                model=self.model_id,
+                contents=f"{self.system_prompt}\n\nVăn bản: {text}"
             )
             return response.text.strip()
         except Exception as e:
