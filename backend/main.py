@@ -7,7 +7,9 @@ from contextlib import asynccontextmanager
 
 from audio_utils import decode_audio_chunk
 from stt_engine import STTEngine
+from translation_engine import TranslationEngine
 from session_manager import SessionManager
+from config import Config
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -18,9 +20,11 @@ session_manager = SessionManager()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Khởi tạo STT Engine (load model) khi startup
+    # Khởi tạo STT Engine & Translation Engine khi startup
     logger.info("Initializing STT Engine...")
     STTEngine.get_instance()
+    logger.info("Initializing Translation Engine...")
+    TranslationEngine.get_instance()
     yield
     # Cleanup nếu cần khi shutdown
     logger.info("Shutting down STT Engine...")
@@ -51,39 +55,54 @@ async def disconnect(sid):
 @sio.event
 async def audio_chunk(sid, data):
     """
-    Xử lý chunk âm thanh từ extension.
-    Sử dụng anyio.to_thread để xử lý STT mà không chặn event loop.
+    Luồng xử lý: Audio -> STT -> Translation -> Emit
     """
     try:
-        # 1. Giải mã WebM sang Numpy (FFmpeg)
-        # Chạy trong luồng riêng để tránh block event loop
+        # 1. Giải mã WebM (Non-blocking)
         audio_data = await anyio.to_thread.run_sync(decode_audio_chunk, data)
-        
         if audio_data.size == 0:
             return
 
-        # 2. Thêm vào session buffer
         session = session_manager.get_or_create_session(sid)
         session.add_chunk(audio_data)
 
-        # 3. Kiểm tra xem có nên thực hiện STT không (Sliding Window)
         if session.should_transcribe():
             audio_window = session.get_window()
             
-            # 4. Nhận dạng giọng nói (Whisper)
-            # Chạy trong luồng riêng vì Whisper tiêu tốn nhiều CPU/GPU
-            text = await anyio.to_thread.run_sync(
-                STTEngine.get_instance().transcribe, 
-                audio_window
-            )
+            # 2. Chạy STT và Dịch thuật nối tiếp nhau trong cùng một thread task
+            # giúp giữ đúng thứ tự và không làm nghẽn event loop chính.
+            result = await anyio.to_thread.run_sync(_run_stt_and_translate, audio_window)
             
-            if text:
-                logger.info(f"Transcribed [{sid}]: {text}")
-                # Gửi kết quả về client (Extension)
-                await sio.emit('transcription', {'text': text}, to=sid)
+            if result and result.get("translated_text"):
+                logger.info(f"Final Result [{sid}]: {result['original_text']} -> {result['translated_text']}")
+                await sio.emit('transcription', result, to=sid)
 
     except Exception as e:
         logger.error(f"Error processing audio_chunk: {e}")
+
+def _run_stt_and_translate(audio_data):
+    """
+    Hàm helper chạy STT nối tiếp Translation trong luồng riêng.
+    """
+    try:
+        # 1. STT
+        stt_res = STTEngine.get_instance().transcribe(audio_data)
+        original_text = stt_res["text"]
+        
+        if not original_text:
+            return None
+            
+        # 2. Dịch thuật (Gemini)
+        translated_text = TranslationEngine.get_instance().translate(original_text)
+        
+        return {
+            "original_text": original_text,
+            "translated_text": translated_text,
+            "language": stt_res["language"]
+        }
+    except Exception as e:
+        logger.error(f"Pipeline Error: {e}")
+        return None
 
 @app.get("/")
 def read_root():

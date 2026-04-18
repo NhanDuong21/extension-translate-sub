@@ -6,3 +6,5 @@ anyio
 numpy
 soundfile
 ffmpeg-python
+google-generativeai
+python-dotenv

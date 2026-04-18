@@ -26,14 +26,19 @@ class STTEngine:
     def transcribe(self, audio_data):
         """
         Thực hiện nhận dạng giọng nói từ numpy array.
+        Trả về dict với đầy đủ thông tin.
         """
         segments, info = self.model.transcribe(
             audio_data, 
             beam_size=5,
-            language="en", # Giả định nguồn là tiếng Anh trước, có thể để auto
             condition_on_previous_text=False
         )
         
         # Kết hợp các segment thành 1 chuỗi text
-        text = " ".join([segment.text for segment in segments])
-        return text.strip()
+        text = " ".join([segment.text for segment in segments]).strip()
+        
+        return {
+            "text": text,
+            "language": info.language,
+            "confidence": info.language_probability
+        }
