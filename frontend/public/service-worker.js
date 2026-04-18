@@ -99,16 +99,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   // 2. Relay message từ Offscreen sang Content Script
-  if (message.type === 'TRANSCRIPT' && activeTabId !== null) {
-    console.log('Relaying transcript to tab:', activeTabId);
-    chrome.tabs.sendMessage(activeTabId, {
-      type: 'TRANSCRIPT',
-      payload: message.payload
-    }).catch(() => {
-      console.log('Target tab not ready for transcription relay.');
-    });
+  if (message.type === 'TRANSCRIPT') {
+    if (activeTabId === null) {
+      // Fallback: Tìm lại tab đang active nếu bị mất ID
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          activeTabId = tabs[0].id;
+          relayTranscript(activeTabId, message.payload);
+        }
+      });
+    } else {
+      relayTranscript(activeTabId, message.payload);
+    }
   }
 });
+
+function relayTranscript(tabId, payload) {
+  console.log('Gửi chữ xuống tab:', tabId);
+  chrome.tabs.sendMessage(tabId, {
+    type: 'TRANSCRIPT',
+    payload: payload
+  }).catch(() => {
+    console.log('Target tab not ready for transcription relay.');
+  });
+}
 
 // Vẫn giữ onClicked để hỗ trợ kích hoạt nhanh nếu cần (tùy chọn)
 chrome.action.onClicked.addListener((tab) => {

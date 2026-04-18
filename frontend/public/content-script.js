@@ -14,7 +14,7 @@
   host.style.cssText = `
     all: initial;
     position: fixed;
-    z-index: 2147483647;
+    z-index: 2147483647 !important;
     pointer-events: none;
     bottom: 120px;
     left: 50%;
