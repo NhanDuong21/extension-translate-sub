@@ -12,12 +12,12 @@ class TranslationEngine:
         if TranslationEngine._instance is not None:
             raise Exception("This class is a singleton!")
         
-        # Cấu hình Gemini SDK mới nhất (google-genai) - Ép dùng bản Stable v1
+        # Cấu hình Gemini SDK mới nhất (google-genai) - Ép dùng v1 Stable
         self.client = genai.Client(
             api_key=Config.GEMINI_API_KEY,
             http_options={'api_version': 'v1'}
         )
-        self.model_id = 'gemini-1.5-flash'
+        self.model_id = 'gemini-2.0-flash'
         
         # System Prompt cho dịch thuật phụ đề
         self.system_prompt = (
@@ -49,7 +49,7 @@ class TranslationEngine:
         try:
             # Logic gọi SDK mới (luôn dùng bản stable)
             response = self.client.models.generate_content(
-                model='gemini-1.5-flash',
+                model='gemini-2.0-flash',
                 contents=f"{self.system_prompt}\n\nVăn bản: {text}"
             )
             return response.text.strip()
