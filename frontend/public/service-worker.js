@@ -28,9 +28,35 @@ async function ensureOffscreenDocument() {
   }
 }
 
+// Hàm dừng Capture và đóng Offscreen
+async function stopCapture() {
+  try {
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT']
+    });
+
+    if (existingContexts.length > 0) {
+      // Gửi lệnh stop cho offscreen trước khi đóng để nó chủ động dọn dẹp
+      await chrome.runtime.sendMessage({ type: 'STOP_CAPTURE' }).catch(() => {});
+      await chrome.offscreen.closeDocument();
+      console.log('Offscreen document closed.');
+    }
+  } catch (error) {
+    console.error('Error closing offscreen document:', error);
+  } finally {
+    activeTabId = null;
+  }
+}
+
 // Hàm khởi tạo Capture (được gọi từ Popup)
 async function startCapture(tabId, tabTitle) {
   try {
+    // Nếu đang có một session khác, hãy dừng nó trước để tránh lỗi "active stream"
+    if (activeTabId !== null) {
+      console.log('Existing session found. Resetting...');
+      await stopCapture();
+    }
+
     activeTabId = tabId;
     
     // 1. Đảm bảo offscreen document đã sẵn sàng
@@ -51,6 +77,7 @@ async function startCapture(tabId, tabTitle) {
     console.log(`Sent streamId to offscreen for tab: ${tabTitle} (ID: ${tabId})`);
   } catch (error) {
     console.error('Failed to start capture:', error);
+    activeTabId = null;
   }
 }
 
@@ -63,6 +90,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         startCapture(tabs[0].id, tabs[0].title);
       }
     });
+  }
+
+  if (message.type === 'STOP_SESSION') {
+    stopCapture();
   }
 
   // 2. Relay message từ Offscreen sang Content Script

@@ -6,6 +6,7 @@
 let socket;
 let mediaRecorder;
 let audioContext;
+let audioStream; // Lưu trữ stream để stop sau này
 
 // Kết nối tới Backend
 function setupSocket() {
@@ -30,6 +31,33 @@ function setupSocket() {
   });
 }
 
+// Dừng capture và giải phóng tài nguyên
+function stopCapture() {
+  console.log('Stopping capture and cleaning up...');
+  
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+
+  if (audioStream) {
+    audioStream.getTracks().forEach(track => {
+      track.stop();
+      console.log('Track stopped:', track.label);
+    });
+    audioStream = null;
+  }
+
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
+  }
+
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+}
+
 // Xử lý stream audio
 async function startCapture(streamId) {
   try {
@@ -43,6 +71,7 @@ async function startCapture(streamId) {
       },
       video: false
     });
+    audioStream = stream;
 
     // 2. Setup AudioContext để downsample về 16kHz
     audioContext = new AudioContext({ sampleRate: 16000 });
@@ -81,4 +110,13 @@ chrome.runtime.onMessage.addListener((message) => {
     if (!socket) setupSocket();
     startCapture(message.streamId);
   }
+
+  if (message.type === 'STOP_CAPTURE') {
+    stopCapture();
+  }
 });
+
+// Backup cleanup khi trang bị đóng
+window.onunload = () => {
+  stopCapture();
+};

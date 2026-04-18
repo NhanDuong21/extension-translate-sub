@@ -47,6 +47,7 @@ body {
   margin: 0;
   background: linear-gradient(to right, #38bdf8, #818cf8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -114,6 +115,17 @@ body {
   color: #94a3b8;
   cursor: default;
   box-shadow: none;
+}
+
+.translate-btn.stop {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.translate-btn.stop:hover {
+  background: #dc2626;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
 }
 
 .description {

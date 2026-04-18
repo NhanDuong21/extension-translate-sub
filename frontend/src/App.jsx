@@ -6,9 +6,15 @@ function App() {
 
   const handleStartTranslation = () => {
     setIsTranslating(true);
-    // Gửi message tới Service Worker để bắt đầu capture
     if (typeof chrome !== 'undefined' && chrome.runtime) {
       chrome.runtime.sendMessage({ type: 'START_SESSION' });
+    }
+  };
+
+  const handleStopTranslation = () => {
+    setIsTranslating(false);
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({ type: 'STOP_SESSION' });
     }
   };
 
@@ -28,11 +34,10 @@ function App() {
         </div>
 
         <button 
-          className={`translate-btn ${isTranslating ? 'active' : ''}`}
-          onClick={handleStartTranslation}
-          disabled={isTranslating}
+          className={`translate-btn ${isTranslating ? 'stop' : ''}`}
+          onClick={isTranslating ? handleStopTranslation : handleStartTranslation}
         >
-          {isTranslating ? 'Đang dịch...' : 'Bắt đầu Dịch'}
+          {isTranslating ? 'Dừng Dịch' : 'Bắt đầu Dịch'}
         </button>
 
         <p className="description">
