@@ -75,7 +75,7 @@ async def audio_chunk(sid, data):
             
             if result and result.get("translated_text"):
                 logger.info(f"Final Result [{sid}]: {result['original_text']} -> {result['translated_text']}")
-                await sio.emit('transcription', result, to=sid)
+                await sio.emit('transcript', result, to=sid)
 
     except Exception as e:
         logger.error(f"Error processing audio_chunk: {e}")

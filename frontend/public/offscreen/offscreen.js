@@ -18,7 +18,7 @@ function setupSocket() {
     console.log('Connected to backend via Socket.io');
   });
 
-  socket.on('transcription', (data) => {
+  socket.on('transcript', (data) => {
     // Relay dữ liệu từ socket sang Service Worker
     chrome.runtime.sendMessage({
       type: 'TRANSCRIPT',
@@ -77,24 +77,24 @@ async function startCapture(streamId) {
     audioContext = new AudioContext({ sampleRate: 16000 });
     const source = audioContext.createMediaStreamSource(stream);
     
-    // --- PHÁT LẠI ÂM THANH RA LOA ---
     // Nối nguồn âm thanh tới destination của AudioContext (mặc định là loa)
     source.connect(audioContext.destination);
     console.log('Audio routed back to speakers for monitoring.');
 
-    // 3. Sử dụng ScriptProcessorNode để lấy dữ liệu Raw PCM
-    // bufferSize 4096 (khoảng 0.25s ở 16kHz)
-    const processor = audioContext.createScriptProcessor(4096, 1, 1);
-    source.connect(processor);
-    processor.connect(audioContext.destination); // Cần connect để node hoạt động
+    // 3. Load và sử dụng AudioWorklet để lấy dữ liệu Raw PCM
+    await audioContext.audioWorklet.addModule('processor.js');
+    const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
+    
+    source.connect(workletNode);
+    workletNode.connect(audioContext.destination); // Cần connect để node hoạt động
 
     let audioBuffer = [];
     const CHUNK_SIZE = 16000; // 1 giây dữ liệu ở 16kHz
 
-    processor.onaudioprocess = (event) => {
+    workletNode.port.onmessage = (event) => {
       if (!socket || !socket.connected) return;
 
-      const inputData = event.inputBuffer.getChannelData(0); // Float32Array
+      const inputData = event.data; // Float32Array từ processor.js
       
       // Copy dữ liệu vào buffer tạm
       for (let i = 0; i < inputData.length; i++) {
@@ -105,14 +105,14 @@ async function startCapture(streamId) {
       if (audioBuffer.length >= CHUNK_SIZE) {
         const chunk = new Float32Array(audioBuffer.slice(0, CHUNK_SIZE));
         socket.emit('audio_chunk', chunk.buffer); // Gửi ArrayBuffer của Float32 thô
-        console.log('Sent 1s Raw PCM chunk to backend');
+        console.log('Sent 1s Raw PCM chunk to backend (via AudioWorklet)');
         
         // Giữ lại phần dư nếu có
         audioBuffer = audioBuffer.slice(CHUNK_SIZE);
       }
     };
 
-    console.log('PCM Capture started: 16kHz, Float32, 1s chunks');
+    console.log('AudioWorklet Capture started: 16kHz, Float32, 1s chunks');
 
   } catch (error) {
     console.error('Error in offscreen capture:', error);
