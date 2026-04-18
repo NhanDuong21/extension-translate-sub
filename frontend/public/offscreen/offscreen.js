@@ -76,27 +76,43 @@ async function startCapture(streamId) {
     // 2. Setup AudioContext để downsample về 16kHz
     audioContext = new AudioContext({ sampleRate: 16000 });
     const source = audioContext.createMediaStreamSource(stream);
-    const destination = audioContext.createMediaStreamDestination();
-    source.connect(destination);
+    
+    // --- PHÁT LẠI ÂM THANH RA LOA ---
+    // Nối nguồn âm thanh tới destination của AudioContext (mặc định là loa)
+    source.connect(audioContext.destination);
+    console.log('Audio routed back to speakers for monitoring.');
 
-    // 3. Sử dụng MediaRecorder để cắt chunk 1s
-    // WebM Opus là format tốt cho streaming
-    mediaRecorder = new MediaRecorder(destination.stream, {
-      mimeType: 'audio/webm;codecs=opus'
-    });
+    // 3. Sử dụng ScriptProcessorNode để lấy dữ liệu Raw PCM
+    // bufferSize 4096 (khoảng 0.25s ở 16kHz)
+    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+    source.connect(processor);
+    processor.connect(audioContext.destination); // Cần connect để node hoạt động
 
-    mediaRecorder.ondataavailable = async (event) => {
-      if (event.data.size > 0 && socket && socket.connected) {
-        // Chuyển blob sang ArrayBuffer để gửi qua socket
-        const arrayBuffer = await event.data.arrayBuffer();
-        socket.emit('audio_chunk', arrayBuffer);
-        console.log('Sent audio chunk to backend:', event.data.size, 'bytes');
+    let audioBuffer = [];
+    const CHUNK_SIZE = 16000; // 1 giây dữ liệu ở 16kHz
+
+    processor.onaudioprocess = (event) => {
+      if (!socket || !socket.connected) return;
+
+      const inputData = event.inputBuffer.getChannelData(0); // Float32Array
+      
+      // Copy dữ liệu vào buffer tạm
+      for (let i = 0; i < inputData.length; i++) {
+        audioBuffer.push(inputData[i]);
+      }
+
+      // Khi đủ 1 giây (16000 samples), gửi đi
+      if (audioBuffer.length >= CHUNK_SIZE) {
+        const chunk = new Float32Array(audioBuffer.slice(0, CHUNK_SIZE));
+        socket.emit('audio_chunk', chunk.buffer); // Gửi ArrayBuffer của Float32 thô
+        console.log('Sent 1s Raw PCM chunk to backend');
+        
+        // Giữ lại phần dư nếu có
+        audioBuffer = audioBuffer.slice(CHUNK_SIZE);
       }
     };
 
-    // Bắt đầu record với interval 1000ms (1s)
-    mediaRecorder.start(1000);
-    console.log('MediaRecorder started with 1s chunks at 16kHz');
+    console.log('PCM Capture started: 16kHz, Float32, 1s chunks');
 
   } catch (error) {
     console.error('Error in offscreen capture:', error);
