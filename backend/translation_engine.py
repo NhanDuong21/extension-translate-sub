@@ -44,7 +44,7 @@ class TranslationEngine:
             return text
             
         try:
-            # Logic gọi SDK mới (chuẩn v1 stable)
+            # Logic gọi SDK mới (luôn dùng bản stable)
             response = self.client.models.generate_content(
                 model='gemini-1.5-flash',
                 contents=f"{self.system_prompt}\n\nVăn bản: {text}"
