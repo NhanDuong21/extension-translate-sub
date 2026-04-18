@@ -52,7 +52,8 @@ class TranslationEngine:
             return response.text.strip()
         except Exception as e:
             logger.error(f"Gemini Translation Error: {e}")
-            return f"[Error: {text}]"
+            # Trả về text gốc nếu lỗi để không làm gián đoạn UI
+            return text
 
     def translate(self, text: str) -> str:
         """Wrapper cho hàm dịch có cache."""
