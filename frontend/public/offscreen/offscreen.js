@@ -10,7 +10,7 @@ let audioStream; // Lưu trữ stream để stop sau này
 
 // Kết nối tới Backend
 function setupSocket() {
-  socket = io('http://localhost:8000', {
+  socket = io('http://localhost:8888', {
     transports: ['websocket']
   });
 

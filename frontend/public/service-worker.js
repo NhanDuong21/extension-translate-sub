@@ -55,6 +55,8 @@ async function startCapture(tabId, tabTitle) {
     if (activeTabId !== null) {
       console.log('Existing session found. Resetting...');
       await stopCapture();
+      // Đợi Chrome giải phóng stream cũ
+      await new Promise(r => setTimeout(r, 1000));
     }
 
     activeTabId = tabId;
