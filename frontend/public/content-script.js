@@ -46,7 +46,7 @@
       max-width: 85vw;
       min-width: 200px;
       cursor: grab;
-      transition: opacity 0.3s ease, transform 0.1s ease;
+      transition: opacity 0.3s ease-in-out, transform 0.1s ease;
     }
 
     #subtitle-wrapper:active { cursor: grabbing; }

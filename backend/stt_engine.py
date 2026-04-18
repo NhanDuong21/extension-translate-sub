@@ -30,7 +30,7 @@ class STTEngine:
         """
         segments, info = self.model.transcribe(
             audio_data, 
-            beam_size=5,
+            beam_size=1,
             condition_on_previous_text=False
         )
         

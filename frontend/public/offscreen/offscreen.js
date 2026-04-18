@@ -89,7 +89,8 @@ async function startCapture(streamId) {
     workletNode.connect(audioContext.destination); // Cần connect để node hoạt động
 
     let audioBuffer = [];
-    const CHUNK_SIZE = 16000; // 1 giây dữ liệu ở 16kHz
+    const CHUNK_SIZE = 48000; // 3 giây dữ liệu ở 16kHz
+    const STEP_SIZE = 24000;  // 1.5 giây độ trễ (gửi đè lên nhau)
 
     workletNode.port.onmessage = (event) => {
       if (!socket || !socket.connected) return;
@@ -101,18 +102,18 @@ async function startCapture(streamId) {
         audioBuffer.push(inputData[i]);
       }
 
-      // Khi đủ 1 giây (16000 samples), gửi đi
+      // Kỹ thuật Overlapping: Gửi chunk 3s mỗi 1.5s
       if (audioBuffer.length >= CHUNK_SIZE) {
         const chunk = new Float32Array(audioBuffer.slice(0, CHUNK_SIZE));
         socket.emit('audio_chunk', chunk.buffer); // Gửi ArrayBuffer của Float32 thô
-        console.log('Sent 1s Raw PCM chunk to backend (via AudioWorklet)');
+        console.log('Sent 3s Raw PCM chunk (Overlapping 1.5s) to backend');
         
-        // Giữ lại phần dư nếu có
-        audioBuffer = audioBuffer.slice(CHUNK_SIZE);
+        // Trượt cửa sổ đi STEP_SIZE thay vì xóa sạch
+        audioBuffer = audioBuffer.slice(STEP_SIZE);
       }
     };
 
-    console.log('AudioWorklet Capture started: 16kHz, Float32, 1s chunks');
+    console.log('AudioWorklet Capture: 3s chunks, 1.5s step (Overlapping) started');
 
   } catch (error) {
     console.error('Error in offscreen capture:', error);

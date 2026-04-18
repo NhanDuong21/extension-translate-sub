@@ -18,11 +18,8 @@ class TranslationEngine:
         )
         self.model_id = 'gemini-2.0-flash'
         
-        # System Prompt cho dịch thuật phụ đề
-        self.system_prompt = (
-            "Dịch đoạn hội thoại sau sang tiếng Việt một cách tự nhiên cho phụ đề phim. "
-            "Chỉ trả về bản dịch, không thêm chú thích:"
-        )
+        # System Prompt cực ngắn để giảm latency
+        self.system_prompt = "Dịch sang tiếng Việt, phong cách phụ đề, chỉ trả về bản dịch:"
         
         TranslationEngine._instance = self
 
