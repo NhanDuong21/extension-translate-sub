@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+python-socketio
+faster-whisper
+anyio
+numpy
+soundfile
+ffmpeg-python
