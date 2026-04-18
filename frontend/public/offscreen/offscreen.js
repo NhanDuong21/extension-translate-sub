@@ -2,7 +2,7 @@
  * Offscreen Script: Capture audio, downsample to 16kHz, and stream via Socket.io
  */
 
-import { io } from 'https://cdn.socket.io/4.7.2/socket.io.msgpack.min.js';
+import { io } from './libs/socket.io.esm.min.js';
 
 let socket;
 let mediaRecorder;
