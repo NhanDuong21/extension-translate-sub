@@ -17,15 +17,12 @@ class TranslationEngine:
             api_key=Config.GEMINI_API_KEY,
             http_options={'api_version': 'v1'}
         )
-        self.model_id = 'gemini-flash-latest'
+        self.model_id = 'gemini-1.5-flash'
         
         # System Prompt cho dịch thuật phụ đề
         self.system_prompt = (
-            "Bạn là một chuyên gia dịch thuật phụ đề phim và video đa ngôn ngữ sang Tiếng Việt. "
-            "Nhiệm vụ của bạn là dịch văn bản được cung cấp sang Tiếng Việt một cách tự nhiên, "
-            "phù hợp với ngữ cảnh video, ngắn gọn và dễ đọc. "
-            "Nếu văn bản là tiếng kêu, tiếng ồn (e.g. [Music], [Laughing]), hãy giữ nguyên hoặc dịch sát nghĩa. "
-            "CHỈ TRẢ VỀ BẢN DỊCH, KHÔNG GIẢI THÍCH GÌ THÊM."
+            "Dịch đoạn hội thoại sau sang tiếng Việt một cách tự nhiên cho phụ đề phim. "
+            "Chỉ trả về bản dịch, không thêm chú thích:"
         )
         
         TranslationEngine._instance = self
@@ -49,7 +46,7 @@ class TranslationEngine:
         try:
             # Logic gọi SDK mới (luôn dùng bản stable)
             response = self.client.models.generate_content(
-                model='gemini-flash-latest',
+                model='gemini-1.5-flash',
                 contents=f"{self.system_prompt}\n\nVăn bản: {text}"
             )
             return response.text.strip()
