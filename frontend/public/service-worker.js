@@ -98,7 +98,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // 2. Relay message từ Offscreen sang Content Script
   if (message.type === 'TRANSCRIPT' && activeTabId !== null) {
-    console.log('Relaying to tab:', activeTabId, message.payload);
+    console.log('Relaying transcript to tab:', activeTabId);
     chrome.tabs.sendMessage(activeTabId, {
       type: 'TRANSCRIPT',
       payload: message.payload
